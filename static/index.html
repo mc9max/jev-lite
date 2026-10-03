@@ -1,0 +1,365 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Jev Lite</title>
+<style>
+  :root {
+    --bg: #0b0d12; --panel: #12151d; --panel2: #171b25;
+    --line: #232936; --text: #e8ebf2; --muted: #8b93a7;
+    --acc: #7aa2ff; --ok: #46c98c; --warn: #e0b34c; --err: #e5636c;
+    --mono: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: var(--sans); min-height: 100vh;
+    display: flex; flex-direction: column;
+  }
+  header {
+    display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+    padding: 14px 20px; border-bottom: 1px solid var(--line);
+    background: linear-gradient(180deg, #10131b, #0b0d12);
+    position: sticky; top: 0; z-index: 5;
+  }
+  .logo {
+    width: 30px; height: 30px; border-radius: 8px; flex: none;
+    background: radial-gradient(circle at 30% 30%, #9db9ff, #4d6ef0 55%, #28408f 100%);
+    box-shadow: 0 0 18px rgba(122,162,255,.35);
+  }
+  .wordmark { font-size: 15px; font-weight: 700; letter-spacing: .3px; }
+  .wordmark small { color: var(--muted); font-weight: 500; }
+  #status-pill {
+    margin-left: auto; font-size: 12.5px; padding: 5px 12px;
+    border-radius: 999px; border: 1px solid var(--line); background: var(--panel);
+    color: var(--muted); display: flex; align-items: center; gap: 8px;
+    max-width: 46ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  #status-pill .dot { width: 8px; height: 8px; border-radius: 50%; flex: none; background: var(--muted); }
+  #status-pill.ok { color: var(--ok); } #status-pill.ok .dot { background: var(--ok); box-shadow: 0 0 8px var(--ok); }
+  #status-pill.warn { color: var(--warn); } #status-pill.warn .dot { background: var(--warn); }
+  #status-pill.err { color: var(--err); } #status-pill.err .dot { background: var(--err); }
+
+  main { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; padding: 18px 20px; flex: 1; align-items: start; }
+  @media (max-width: 980px) { main { grid-template-columns: 1fr; } }
+  .card {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 16px; display: flex; flex-direction: column; gap: 12px;
+  }
+  .card h2 { margin: 0; font-size: 13.5px; text-transform: uppercase; letter-spacing: 1.2px; color: var(--muted); font-weight: 600; }
+  label { font-size: 12.5px; color: var(--muted); display: block; margin-bottom: 5px; }
+  textarea, select, input[type=text], input[type=password] {
+    width: 100%; background: var(--panel2); color: var(--text);
+    border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px;
+    font-family: var(--mono); font-size: 13px; resize: vertical; line-height: 1.5;
+  }
+  textarea:focus, select:focus, input:focus { outline: none; border-color: var(--acc); }
+  #state-input { min-height: 150px; }
+  .q-row {
+    background: var(--panel2); border: 1px solid var(--line); border-radius: 10px;
+    padding: 12px; display: flex; flex-direction: column; gap: 10px;
+  }
+  .q-head { display: flex; gap: 10px; align-items: flex-start; }
+  .q-head > * { min-width: 0; }
+  .q-head input { flex: 1; }
+  .q-head select { width: 130px; flex: none; }
+  .remove-btn {
+    flex: none; align-self: center; border: 1px solid var(--line); background: transparent;
+    color: var(--muted); border-radius: 7px; width: 30px; height: 30px; cursor: pointer; font-size: 15px;
+  }
+  .remove-btn:hover { color: var(--err); border-color: var(--err); }
+  .criteria-box { display: none; }
+  .criteria-box.show { display: block; }
+  .btn-row { display: flex; gap: 10px; align-items: center; margin-top: 2px; }
+  button.primary {
+    background: linear-gradient(180deg, #5c83f2, #3d63d8); color: #fff; border: none;
+    border-radius: 9px; padding: 11px 20px; font-size: 14px; font-weight: 600; cursor: pointer;
+    box-shadow: 0 2px 14px rgba(77,110,240,.35);
+  }
+  button.primary:disabled { opacity: .55; cursor: wait; }
+  button.ghost {
+    background: transparent; border: 1px solid var(--line); color: var(--muted);
+    border-radius: 9px; padding: 10px 14px; font-size: 13px; cursor: pointer;
+  }
+  button.ghost:hover { color: var(--text); border-color: var(--acc); }
+  #result {
+    font-family: var(--mono); font-size: 13px; white-space: pre-wrap; word-break: break-word;
+    background: #0a0c11; border: 1px solid var(--line); border-radius: 8px;
+    padding: 14px; max-height: 420px; overflow: auto; line-height: 1.55;
+  }
+  #result.err { color: var(--err); border-color: rgba(229,99,108,.4); }
+  #result .hint { display: block; margin-top: 10px; color: var(--warn); font-size: 12.5px; border-top: 1px dashed var(--line); padding-top: 10px; }
+  #result .meta { color: var(--muted); font-size: 12px; }
+  .settings { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  @media (max-width: 640px) { .settings { grid-template-columns: 1fr; } }
+  .muted { color: var(--muted); font-size: 12px; line-height: 1.5; }
+  footer { padding: 10px 20px 16px; color: var(--muted); font-size: 11.5px; text-align: center; }
+</style>
+</head>
+<body>
+<header>
+  <div class="logo"></div>
+  <div class="wordmark">Jev Lite <small>&nbsp;&middot;&nbsp; self-hosted System One console</small></div>
+  <div id="status-pill"><span class="dot"></span><span id="status-text">checking&hellip;</span></div>
+</header>
+
+<main>
+  <section class="card">
+    <h2>Request</h2>
+
+    <div>
+      <label for="state-input">State — the application context to evaluate (text, JSON, or a list)</label>
+      <textarea id="state-input" placeholder='"Help! My payouts have been failing for 3 days, I need this resolved today."'></textarea>
+    </div>
+
+    <div>
+      <label>Questions</label>
+      <div id="questions" style="display:flex; flex-direction:column; gap:10px;"></div>
+      <div class="btn-row">
+        <button class="ghost" id="add-question" type="button">+ Add question</button>
+      </div>
+    </div>
+
+    <div>
+      <label for="model-input">Model (blank = instance default)</label>
+      <input type="text" id="model-input" placeholder="jev-latest">
+    </div>
+
+    <div class="btn-row">
+      <button class="primary" id="send" type="button">Send decision to Jev</button>
+      <button class="ghost" id="load-example" type="button">Load example</button>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Result</h2>
+    <div id="result" class="muted">Responses from the Jev model appear here.&nbsp;</div>
+  </section>
+
+  <section class="card">
+    <h2>Instance &amp; access</h2>
+    <div class="settings">
+      <div>
+        <label>Default model</label>
+        <input type="text" id="cfg-model" readonly>
+      </div>
+      <div>
+        <label>Upstream</label>
+        <input type="text" id="cfg-upstream" readonly>
+      </div>
+    </div>
+    <div class="btn-row" style="flex-wrap:wrap;">
+      <button class="ghost" id="cfg-auth-toggle" type="button">Show API key field</button>
+      <span class="muted" id="cfg-auth-note">Key is stored browser-side only and sent as <code>Authorization: Bearer &hellip;</code> to lock-protected instances.</span>
+    </div>
+    <div id="cfg-auth-field" style="display:none;">
+      <input type="password" id="cfg-auth" placeholder="API key / AUTH_TOKEN (optional)">
+    </div>
+    <div class="muted">API: <code>POST /v1/decide</code> &middot; <code>GET /v1/models</code> &middot; <code>GET /health</code> — see the API section of the README for the full contract.</div>
+  </section>
+</main>
+
+<footer>Jev Lite &mdash; a thin, self-hosted console over the official Jev (System One) decision API.</footer>
+
+<script>
+(() => {
+  const $ = s => document.querySelector(s);
+  const resultEl = $('#result');
+  const pill = $('#status-pill'), pillText = $('#status-text');
+  let authKey = '';
+  try { authKey = localStorage.getItem('jevLiteAuthKey') || ''; } catch(e) {}
+  if (authKey) { $('#cfg-auth-field').style.display = 'block'; $('#cfg-auth').value = authKey; }
+
+  // ── question builder ──────────────────────────────────────────────
+  const questionsEl = $('#questions');
+
+  function makeQ(q) {
+    const data = q || {type: 'noul'};
+    const row = document.createElement('div');
+    row.className = 'q-row';
+    row.innerHTML = `
+      <div class="q-head">
+        <input type="text" class="q-id" placeholder="question id, e.g. is_urgent"
+               value="${(data.id||'').replace(/"/g,'&quot;')}">
+        <select class="q-type">
+          <option value="noul">noul — yes/no</option>
+          <option value="choice">choice — pick one</option>
+          <option value="score">score — rank options</option>
+        </select>
+        <button class="remove-btn" type="button" title="Remove question">✕</button>
+      </div>
+      <div>
+        <label>Criteria / options — for <code>choice</code> type</label>
+        <textarea class="q-choices" style="min-height:70px;"
+          placeholder='{"option_a": "label A", "option_b": "label B"}'></textarea>
+      </div>
+      <div>
+        <label>Criteria / levels — for <code>score</code> type</label>
+        <textarea class="q-score" style="min-height:70px;"
+          placeholder='[{"0": "lowest"}, {"1": "mid"}, {"2": "highest"}]'></textarea>
+      </div>
+      <div>
+        <label>Instructions — what should this question answer?</label>
+        <input type="text" class="q-instr"
+          placeholder="e.g. Does this message express urgency?">
+      </div>`;
+    row.querySelector('.q-type').value = data.type || 'noul';
+    row.querySelector('.q-choices')?.value ||=
+      typeof data.choices === 'string' ? data.choices
+      : (data.choices ? JSON.stringify(data.choices) : '');
+    row.querySelector('.q-score')?.value ||=
+      Array.isArray(data.score) ? JSON.stringify(data.score)
+      : (data.score ? JSON.stringify(data.score) : '');
+    row.querySelector('.q-instr').value     = data.instr || '';
+    syncCriteria(row);
+    row.querySelector('.q-type').addEventListener('change', () => syncCriteria(row));
+    row.querySelector('.remove-btn').addEventListener('click', () => {
+      if (questionsEl.children.length > 1) row.remove();
+      else { row.querySelector('.q-id').value = ''; }
+    });
+    return row;
+  }
+
+  function syncCriteria(row) {
+    const t = row.querySelector('.q-type').value;
+    row.querySelector('.q-choices').parentElement.style.display  = t === 'choice' ? '' : 'none';
+    row.querySelector('.q-score').parentElement.style.display    = t === 'score'  ? '' : 'none';
+  }
+
+  function readQuestions() {
+    const out = {};
+    questionsEl.querySelectorAll('.q-row').forEach(row => {
+      const id = row.querySelector('.q-id').value.trim() || 'q';
+      const type = row.querySelector('.q-type').value;
+      const instr = row.querySelector('.q-instr').value.trim();
+      const q = {type, instructions: instr};
+      if (type === 'choice') {
+        const t = row.querySelector('.q-choices').value.trim();
+        if (t) { try { q.criteria = JSON.parse(t); } catch(e) { /* let upstream tell us */ } }
+      }
+      if (type === 'score') {
+        const t = row.querySelector('.q-score').value.trim();
+        if (t) { try { q.criteria = JSON.parse(t); } catch(e) { /* let upstream tell us */ } }
+      }
+      out[id] = q;
+    });
+    return out;
+  }
+
+  const EXAMPLE = {
+    state: 'Help! My payouts have been failing for 3 days, I need this resolved today.',
+    questions: [
+      {id: 'is_urgent', type: 'noul',  instr: 'Does this message express urgency?'},
+      {id: 'priority',  type: 'score', instr: 'How urgent is this request?',
+       score: [{0: 'low — can wait a week'}, {1: 'medium — this week'}, {2: 'high — today'}]},
+    ]
+  };
+  function loadExample() {
+    $('#state-input').value = EXAMPLE.state;
+    questionsEl.innerHTML = '';
+    EXAMPLE.questions.forEach(q => questionsEl.appendChild(makeQ(q)));
+  }
+  loadExample();
+
+  $('#add-question').addEventListener('click', () => questionsEl.appendChild(makeQ(null)));
+  $('#load-example').addEventListener('click', loadExample);
+
+  $('#cfg-auth-toggle').addEventListener('click', () => {
+    const f = $('#cfg-auth-field');
+    f.style.display = f.style.display === 'none' ? 'block' : 'none';
+  });
+  $('#cfg-auth').addEventListener('change', e => {
+    authKey = e.target.value.trim();
+    try { authKey ? localStorage.setItem('jevLiteAuthKey', authKey) : localStorage.removeItem('jevLiteAuthKey'); } catch(err) {}
+  });
+
+  function headers() {
+    const h = {'Content-Type': 'application/json'};
+    if (authKey) h['Authorization'] = 'Bearer ' + authKey;
+    return h;
+  }
+
+  function pillState(kind) {
+    pill.className = kind;
+    const dot = pill.querySelector('.dot');
+    const map = {
+      ok:   {t:'●', c:'ok',   txt: (s) => s || 'ready'},
+      warn: {t:'▲', c:'warn', txt: (s) => '⚠ ' + (s || 'degraded')},
+      err:  {t:'✕', c:'err',  txt: (s) => '✕ ' + (s || 'unreachable')},
+    };
+    dot.style.background = 'var(--' + (kind==='ok'?'ok':kind==='warn'?'warn':'err') + ')';
+  }
+
+  async function checkStatus() {
+    try {
+      // /health needs no auth and is our liveness contract.
+      const r = await fetch('/health', {headers: headers()});
+      const j = await r.json();
+      if (j.key_configured) {
+        pillState('ok');
+        pillText.textContent = j.model + '  ·  ready';
+        $('#cfg-model').value = j.model || '—';
+        $('#cfg-upstream').value = j.upstream || '—';
+      } else {
+        pillState('warn');
+        pillText.textContent = 'upstream key not set';
+        $('#cfg-model').value = (j.model || '—');
+        $('#cfg-upstream').value = (j.upstream || '—') + '  (no key)';
+      }
+    } catch (e) {
+      pillState('err');
+      pillText.textContent = 'unreachable';
+    }
+  }
+  checkStatus();
+  window.setInterval(checkStatus, 15000);
+
+  $('#send').addEventListener('click', async () => {
+    const state = $('#state-input').value.trim();
+    const questions = readQuestions();
+    const model = $('#model-input').value.trim() || undefined;
+    const payload = {state, questions};
+    if (model) payload.model = model;
+
+    resultEl.className = '';
+    resultEl.innerHTML = '<span class="meta">sending to ' + new Date().toLocaleTimeString() + ' …</span>';
+    $('#send').disabled = true;
+    const t0 = performance.now();
+    try {
+      const r = await fetch('/v1/decide', {
+        method: 'POST',
+        headers: headers(),
+        body: JSON.stringify(payload),
+      });
+      const elapsed = Math.round(performance.now() - t0);
+      const j = await r.json().catch(() => ({message: r.statusText}));
+      if (r.status >= 400) {
+        resultEl.classList.add('err');
+        resultEl.innerHTML =
+          `<span class="meta">HTTP ${r.status} · ${elapsed} ms · model: ${j.model || '—'}</span>` +
+          escapeHtml((j.detail || j.message || JSON.stringify(j))) +
+          (j.hint ? `<span class="hint">${escapeHtml(j.hint)}</span>` : '');
+      } else {
+        const body = Object.keys(j).filter(k => !['latency_ms','model_echo','status','message'].includes(k));
+        resultEl.innerHTML =
+          `<span class="meta">HTTP ${r.status} · ${j.latency_ms ?? elapsed} ms round-trip · model: ${j.model_echo || j.model || '—'}${j.status ? ' · status: ' + j.status : ''}</span>` +
+          escapeHtml(JSON.stringify(j, null, 2));
+      }
+    } catch (e) {
+      resultEl.classList.add('err');
+      resultEl.innerHTML = `<span class="meta">${new Date().toLocaleTimeString()} · network error</span>${escapeHtml(String(e))}`;
+    } finally {
+      $('#send').disabled = false;
+    }
+  });
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c =>
+      ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+})();
+</script>
+</body>
+</html>

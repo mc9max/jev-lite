@@ -1,0 +1,14 @@
+{
+  "TYPESAFE_API_KEY": {
+    "value": "",
+    "description": "TypeSafe API key for Jev (System One). Create one at console.typesafe.ai (Settings -> Keys). Required — /v1/decide returns a clear 'no_api_key' error while it is blank; the UI and /health still work so you can confirm the service is live before filling it in and redeploying."
+  },
+  "JEV_MODEL": {
+    "value": "jev-latest",
+    "description": "Model id sent as the default when a request omits 'model'. 'jev-latest' tracks the newest official release; pin a concrete version (e.g. jev-1.13.0) to stay stable across upstream releases."
+  },
+  "AUTH_TOKEN": {
+    "value": "",
+    "description": "Optional access lock-down. When set, the UI and every /v1 endpoint require 'Authorization: Bearer *** value>' (or append ?token=*** to the UI URL). Blank = open public instance (the default)."
+  }
+}
