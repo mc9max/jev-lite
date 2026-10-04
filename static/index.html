@@ -206,12 +206,16 @@
           placeholder="e.g. Does this message express urgency?">
       </div>`;
     row.querySelector('.q-type').value = data.type || 'noul';
-    row.querySelector('.q-choices')?.value ||=
-      typeof data.choices === 'string' ? data.choices
-      : (data.choices ? JSON.stringify(data.choices) : '');
-    row.querySelector('.q-score')?.value ||=
-      Array.isArray(data.score) ? JSON.stringify(data.score)
-      : (data.score ? JSON.stringify(data.score) : '');
+    if (!row.querySelector('.q-choices').value) {
+      row.querySelector('.q-choices').value =
+        typeof data.choices === 'string' ? data.choices
+        : (data.choices ? JSON.stringify(data.choices) : '');
+    }
+    if (!row.querySelector('.q-score').value) {
+      row.querySelector('.q-score').value =
+        Array.isArray(data.score) ? JSON.stringify(data.score)
+        : (data.score ? JSON.stringify(data.score) : '');
+    }
     row.querySelector('.q-instr').value     = data.instr || '';
     syncCriteria(row);
     row.querySelector('.q-type').addEventListener('change', () => syncCriteria(row));
