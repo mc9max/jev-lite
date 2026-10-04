@@ -1,6 +1,6 @@
 # Deploy and Host
 
-[![Deploy on Railway](https://railway.app/button.svg)](https://railway.com/deploy/jev-lite)
+[![Deploy on Railway](https://railway.app/button.svg)](https://railway.com/deploy/jev-lite-1)
 
 **Jev Lite** is a self-hosted proxy + web console for [TypeSafe's Jev (System One)](https://console.typesafe.ai) decision API — turn freeform application state and a set of structured questions into a typed model call, then read back a clean JSON verdict.
 
